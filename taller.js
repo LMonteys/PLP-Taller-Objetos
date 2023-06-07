@@ -7,25 +7,79 @@ function daño(atacante, atacado) {
 
 // Ejercicio 1
 
+function Slime(ataque, defensa){
+    this.energía = MAX_ENERGIA
+    this.nivel = 1
+    this.ataque = Math.max(1,ataque)
+    this.defensa = Math.max(1,defensa)
+}
 
 
 // Ejercicio 2
 
-
+Slime.prototype.actualizarEnergía = function(incremento){
+    this.energía = Math.min(Math.max(this.energía + incremento,0),MAX_ENERGIA)
+}
 
 // Ejercicio 3
 
+Slime.prototype.atacar = function(slimeDefensivo){
+    if(0 < this.energía){
+        let d = daño(this, slimeDefensivo) // Si se hace inline está mal porque el segundo calculo de daño es incorrecto si queda con menos energia que el daño recibido
+        slimeDefensivo.actualizarEnergía(-d)
+        this.actualizarEnergía(d)
+    }
+}
 
 
 // Ejercicio 4
 
+Slime.prototype.duelo = function(oponente){
+    // this es el retador
+    let energia0 = oponente.energía
+    this.atacar(oponente)
+    oponente.atacar(this)
+    if(energia0 > oponente.energía){
+        //this es el retador
+        this.nivel = this.nivel + 1
+        return this
+    }else{
+        oponente.nivel = oponente.nivel + 1
+        return oponente
+    }
+}
 
 
 // Ejercicio 5
+function SlimeSanador(ataque, defensa, poder){
+    Slime.call(this,ataque,defensa)
+    this.poder = poder
+}
 
+Object.setPrototypeOf(SlimeSanador.prototype, Slime.prototype)
 
+SlimeSanador.prototype.curar = function(paciente){
+    paciente.actualizarEnergía(this.poder * this.nivel)
+}
 
 // Ejercicio 6
+
+Slime.prototype.reproducirse = function(){
+    let gasto_de_energia = Math.floor(100/this.nivel)
+    if(gasto_de_energia < this.energía){
+        this.actualizarEnergía(- gasto_de_energia)
+        let hijito = Object.assign({}, this)
+        hijito.nivel = 1
+        hijito.energía = MAX_ENERGIA
+        hijito.padre = this
+        Object.setPrototypeOf(hijito, Object.getPrototypeOf(this))
+        return hijito
+    }
+}
+
+Slime.prototype.esDescendienteDe = function(otro){
+    return this.padre === otro || (this.padre !== undefined && this.padre.esDescendienteDe(otro))
+}
 
 
 
@@ -87,6 +141,15 @@ function testEjercicio2(res) {
 
 // Test Ejercicio 3
 function testEjercicio3(res) {
+    res.write("TESTS PROPIOS")
+    // Nos fijamos que el slime1 robe bien la energia aunque el slime atacado termine con menos de esa energia. 
+    let slime1 = new Slime(9000,1)
+    slime1.energía = 90
+    let slime2 = new Slime(10,1)
+    slime2.energía = 10
+    slime1.atacar(slime2)
+    res.write(`La energía del slime es  ${si_o_no(slime1.energía == 100)} igual a 100.`, slime1.energía == 100)
+    res.write("----------------------------------------------------")
     let slimeOfensivo = new Slime(20, 10);
     let slimeDefensivo = new Slime(10, 20);
     let slimeBalanceado = new Slime(15, 15);
@@ -174,6 +237,13 @@ function testEjercicio5(res) {
     
 // Test Ejercicio 6
 function testEjercicio6(res) {
+    //Tests propios:
+    
+    res.write("TESTS PROPIOS: ")
+    let juan = new Slime(10,20)
+    let b = juan.esDescendienteDe(juan) //deberia dar false
+    res.write(`Juan, el slime, ${si_o_no(b)} es descendiente de si mismo.`,!b)
+    res.write("---------------------------------------------------------------", )
     //Todos los slimes como quedaron hasta ahora.
     let slimeOfensivo = new Slime(20, 10);
     let slimeDesinflado = new Slime(0, 0);
@@ -227,3 +297,6 @@ function testEjercicio6(res) {
     res.write(`El slime balanceado ${si_o_no(cantDescendientes(slimeBalanceado) != 0)} tiene descendencia.`, cantDescendientes(slimeDefensivo) == 1);
     res.write(`El slime sanador ${si_o_no(cantDescendientes(slimeSanador) == 2)} tiene dos descendientes.`, cantDescendientes(slimeBalanceado) == 0);
 }
+
+
+
